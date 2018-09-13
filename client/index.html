@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B"
+        crossorigin="anonymous">
+    <link href="css/shop-homepage.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+
+
+        <div class="navbar bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">Livecode1</a>
+                <div class="header-right" v-if="!token">
+
+                    <input type="text" placeholder="username" v-model="email">
+                    <input type="password" placeholder="password" v-model="password">
+                    <button v-on:click="login()">Login</button>
+                </div>
+                <div class="header-right" v-if="token">
+                    <button v-on:click="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+        <!-- Page Content -->
+        <div class="container container-content">
+            <div class="row">
+                <div class="col-lg-3">
+                    <div class="list-group">
+                        <a href="#" class="list-group-item">All Quotes</a>
+                    </div>
+                </div>
+                <!-- /.col-lg-3 -->
+                <span v-if="msSc" style="color: green">{{msSc}} </span>
+                <span v-if="msErr" style="color: red">{{msErr}} </span>
+                <div class="col-lg-9">
+                    <div class="row">
+                        <div class="col-lg-9 col-sm-9 portfolio-item" v-if="token">
+                            <form>
+                                <div class="form-group">
+                                    <textarea class="form-control" rows="3" placeholder="Quotes" v-model="status"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-primary" v-on:click="insert()">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-lg-6 col-sm-6 portfolio-item" v-for="quote in quotes">
+                            <div class="card h-70">
+                                <div class="card-body">
+                                    <h4 class="card-title">
+                                        {{quote.status}}
+                                    </h4>
+                                    <a href="#" v-if="token & toString(quote.user) == toString(idUserLogin)" v-on:click="remove(quote._id)">Delete</a> <a href="#">Translate</a>
+                                    <p class="translate font-italic" v-if="token">
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                                        incididunt ut labore et dolore magna aliqua
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <!-- /.container -->
+
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js" integrity="sha384-o+RDsa0aLu++PJvFqy8fFScvbHFLtbvScb8AjopnFD+iEQ7wo/CG0xlczd+2O/em"
+        crossorigin="anonymous"></script>
+    <script>
+        let base_url = 'http://localhost:3000'
+        var app = new Vue({
+            el: '#app',
+            data: {
+                message: 'Hello Vue!',
+                email: '',
+                password: '',
+                token: false,
+                isLogin: '',
+                isLogout: '',
+                isToken: '',
+                msSc: '',
+                msErr: '',
+                quotes: '',
+                status: '',
+                owner: false,
+                idUserLogin: ''
+            },
+            methods: {
+                login() {
+                    this.msErr = '',
+                    this.msSc = ''
+                    axios({
+                            method: 'POST',
+                            url: base_url + '/users/login',
+                            data: {
+                                email: this.email,
+                                password: this.password
+                            }
+                        })
+                        .then((result) => {
+                            localStorage.setItem('token', result.data.token)
+                            this.isLogin = localStorage.getItem('token')
+                            localStorage.setItem('idLogin', result.data.idLogin)
+                            this.msSc = 'login succes'
+                        })
+                        .catch((err) => {
+                            this.msErr = 'login err'
+                        });
+                },
+
+                logout() {
+                    this.isLogout = localStorage.getItem('token')
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('idLogin')
+                },
+
+                getQ() {
+                    axios({
+                            method: 'GET',
+                            url: base_url + '/quotes',
+                        })
+                        .then((result) => {
+                            this.quotes = result.data
+                        })
+                        .catch((err) => {
+                            console.log(err);
+                        });
+                },
+
+                insert() {
+                    axios({
+                            method: 'POST',
+                            url: base_url + '/quotes',
+                            headers: {
+                                access_token: this.isToken
+                            },
+                            data: {
+                                status: this.status
+                            }
+                        })
+                        .then((result) => {
+                            this.getQ()
+                        })
+                        .catch((err) => {
+                            console.log(err);
+
+                        });
+                },
+
+                remove(idDelete){
+
+                    axios({
+                        method: 'DELETE',
+                        url: base_url+'/quotes/'+ idDelete,
+                        headers: {
+                            access_token: this.isToken
+                        }
+                    })
+                    .then((result) => {
+                        this.getQ()
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        
+                    });
+                }
+
+
+            },
+            mounted() {
+                this.isToken = localStorage.getItem('token')
+                this.idUserLogin = localStorage.getItem('idLogin')
+                if (this.isToken) {
+                    this.token = true
+                }
+                this.getQ()
+                
+            },
+            watch: {
+                isLogin: function () {
+                    this.token = true
+                    this.idUserLogin = localStorage.getItem('idLogin')
+                },
+                isLogout: function () {
+                    this.token = false
+                }
+            }
+        })
+    </script>
+
+
+</body>
+
+</html>
